@@ -1,11 +1,16 @@
 variable "aws_region" {
   type    = string
-  default = "sa-east-1"
+  default = "us-east-1"
 }
 
 variable "project_name" {
   type    = string
   default = "service-order"
+}
+
+variable "environment" {
+  type    = string
+  default = "production"
 }
 
 variable "vpc_id" {
@@ -48,4 +53,9 @@ variable "db_allocated_storage" {
 variable "db_engine_version" {
   type    = string
   default = "16.10"
+}
+
+variable "publicly_accessible" {
+  type    = bool
+  default = false
 }

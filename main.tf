@@ -12,6 +12,14 @@ provider "aws" {
   region = var.aws_region
 }
 
+locals {
+  common_tags = {
+    Project     = var.project_name
+    Environment = var.environment
+    ManagedBy   = "terraform"
+  }
+}
+
 resource "aws_security_group" "rds" {
   name   = "${var.project_name}-rds"
   vpc_id = var.vpc_id
@@ -29,11 +37,14 @@ resource "aws_security_group" "rds" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = local.common_tags
 }
 
 resource "aws_db_subnet_group" "postgres" {
   name       = "${var.project_name}-postgres"
   subnet_ids = var.private_subnet_ids
+  tags       = local.common_tags
 }
 
 resource "aws_db_instance" "postgres" {
@@ -46,9 +57,10 @@ resource "aws_db_instance" "postgres" {
   username               = var.db_username
   password               = var.db_password
   skip_final_snapshot    = true
-  publicly_accessible    = false
+  publicly_accessible    = var.publicly_accessible
   storage_encrypted      = true
   db_subnet_group_name   = aws_db_subnet_group.postgres.name
   vpc_security_group_ids = [aws_security_group.rds.id]
   multi_az               = false
+  tags                   = local.common_tags
 }

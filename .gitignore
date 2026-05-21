@@ -1,5 +1,10 @@
 .terraform/
-*.tfstate
-*.tfstate.*
+terraform.tfstate
+terraform.tfstate.*
 terraform.tfvars
+*.tfvars
+!terraform.tfvars.example
+crash.log
+override.tf
+*_override.tf
 __pycache__/

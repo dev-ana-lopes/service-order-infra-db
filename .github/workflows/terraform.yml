@@ -3,6 +3,7 @@ on:
   pull_request:
   push:
     branches: [main, homolog]
+  workflow_dispatch:
 
 jobs:
   terraform:
@@ -15,7 +16,7 @@ jobs:
       - run: terraform validate
       - run: terraform plan -input=false -var="vpc_id=vpc-123" -var='private_subnet_ids=["subnet-1","subnet-2"]' -var="app_security_group_id=sg-123" -var="db_password=fake" || true
   apply:
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'workflow_dispatch'
     needs: terraform
     runs-on: ubuntu-latest
     environment: ${{ github.ref_name == 'main' && 'production' || 'homolog' }}
