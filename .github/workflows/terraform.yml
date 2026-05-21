@@ -1,0 +1,31 @@
+name: ci-infra-db
+on:
+  pull_request:
+  push:
+    branches: [main, homolog]
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform init -backend=false
+      - run: terraform fmt -check
+      - run: terraform validate
+      - run: terraform plan -input=false -var="vpc_id=vpc-123" -var='private_subnet_ids=["subnet-1","subnet-2"]' -var="app_security_group_id=sg-123" -var="db_password=fake" || true
+  apply:
+    if: github.event_name != 'pull_request'
+    needs: terraform
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'production' || 'homolog' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform init
+      - run: |
+          terraform apply -auto-approve \
+            -var="vpc_id=${{ vars.VPC_ID }}" \
+            -var='private_subnet_ids=${{ vars.PRIVATE_SUBNET_IDS_JSON }}' \
+            -var="app_security_group_id=${{ vars.APP_SECURITY_GROUP_ID }}" \
+            -var="db_password=${{ secrets.DB_PASSWORD }}"
