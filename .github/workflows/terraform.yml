@@ -24,38 +24,32 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      - run: terraform init -backend=false
+      - name: Terraform init
+        run: terraform init -backend=false
 
-      - run: terraform fmt -check
+      - name: Terraform fmt
+        run: terraform fmt -check
 
-      - run: terraform validate
+      - name: Terraform validate
+        run: terraform validate
 
-      - run: terraform plan -input=false -var="vpc_id=vpc-123" -var='private_subnet_ids=["subnet-1","subnet-2"]' -var="app_security_group_id=sg-123" -var="db_password=fake" || true
+      - name: Terraform plan validation
+        run: |
+          terraform plan -input=false \
+            -var="vpc_id=vpc-123" \
+            -var='private_subnet_ids=["subnet-1","subnet-2"]' \
+            -var="app_security_group_id=sg-123" \
+            -var="db_password=fake" || true
 
   apply:
     if: github.event_name == 'workflow_dispatch'
     needs: terraform
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'main' && 'production' || 'homolog' }}
+    environment: production
 
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: hashicorp/setup-terraform@v3
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: ${{ vars.AWS_REGION }}
-
-      - run: terraform init
-
-      - run: |
-          terraform apply -auto-approve \
-            -var="vpc_id=${{ vars.VPC_ID }}" \
-            -var='private_subnet_ids=${{ vars.PRIVATE_SUBNET_IDS_JSON }}' \
-            -var="app_security_group_id=${{ vars.APP_SECURITY_GROUP_ID }}" \
-            -var="db_password=${{ secrets.DB_PASSWORD }}"
+      - name: Explain manual database apply
+        run: |
+          echo "Database apply is intentionally manual because the existing RDS was provisioned from a local Terraform state."
+          echo "Running terraform apply from GitHub Actions with an empty state would try to recreate existing resources."
+          echo "Use the workstation that owns the current Terraform state, or configure a remote backend and import existing resources before applying from GitHub Actions."
